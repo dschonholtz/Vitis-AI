@@ -15,8 +15,11 @@ H5_MODEL_PATH="$(WINES_DIR)/pat_25302.pruneCNN12.h5"
 QUANTIZED_PATH="$(WINES_DIR)/quantized_model.h5"
 ORIGINAL_RESULTS="${WINES_DIR}/h5_model_out.json"
 QUANTIZED_RESULTS="${WINES_DIR}/quantized_model_out.json"
+BOARD_IP="10.42.0.42"
+CNPY_BUILD="${WINES_DIR}/cnpy_build"
 
 
+# assumed to be the vitis-AI docker container. Also worth activating the conda env: (vitis-ai-tensorflow2)
 is_docker:
 	@echo "Checking if running in docker container"
 	@if [ -f /.dockerenv ]; then \
@@ -79,6 +82,33 @@ evaluate_quant_differences:
 		--quantized_json "${QUANTIZED_RESULTS}" \
 		--pre_quant_json "${ORIGINAL_RESULTS}" \
 		--output_json "${WINES_DIR}/quantized_diffs_out.json"
+
+compile_VART: is_docker
+	vai_c_tensorflow2 -m ${QUANTIZED_PATH} \
+		--arch /opt/vitis_ai/compiler/arch/DPUCZDX8G/KV260/arch.json       \
+		--output_dir compile_model                                       \
+		--net_name seiznet_tf2
+
+# I haven't used this yet.
+test_xmodel: is_docker
+	env XLNX_ENABLE_DUMP=1 XLNX_ENABLE_DEBUG_MODE=1 XLNX_GOLDEN_DIR=./dump_gpu/dump_results_0 \
+		xdputil run ./compile_model/resnet_v1_50_tf.xmodel            \
+		./dump_gpu/dump_results_0/input_aquant.bin                    \
+		2>result.log 1>&2
+
+# TODO - Copy over the C++/python binaries to run the xmodel as well as the xmodel itself.
+copy_model_to_board: is_not_docker
+	scp compile_model/seiznet_tf2.xmodel root@["${BOARD_IP}"]:~/
+
+cnpy:
+	mkdir -p ${CNPY_BUILD}
+	cd ${WINES_DIR} && \
+		git clone https://github.com/rogersce/cnpy.git || true
+	cd ${CNPY_BUILD} && \
+		cmake ${WINES_DIR}/cnpy && \
+		make && \
+		cp libcnpy.so ${CNPY_BUILD}
+
 
 default:
 	make test_quant

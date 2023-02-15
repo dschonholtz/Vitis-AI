@@ -34,8 +34,12 @@ def quantize_model(model_path, quantized_model_path, numpy_dir):
     calib_dataset = np.expand_dims(calib_dataset, axis=1)
 
     quantized_model = quantizer.quantize_model(
+        # output_format='onnx',
+        # onnx_opset_version=11,
+        output_dir='./quantize_results',
         calib_dataset=calib_dataset,
         calib_batch_size=64,
+        add_shape_info=True,
         # include_fast_ft=True,
         # fast_ft_epochs=10,
     )
@@ -54,6 +58,9 @@ def quantize_model(model_path, quantized_model_path, numpy_dir):
     # quantized_model.save(quantized_model_path)
 
     model = keras.models.load_model(quantized_model_path)
+    quantizer.VitisQuantizer.dump_model(model=quantized_model, 
+                                         dataset=calib_dataset,
+                                         output_dir='./quantized_dump')
 
     # path to test dataset
     # eval_dataset = os.path.join(local_dir_path, 'np_data')
