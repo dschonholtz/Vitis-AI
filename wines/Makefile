@@ -9,6 +9,7 @@ ROOT_DIR=$(shell dirname $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))
 # get the current dir and save it as a var
 WINES_DIR=$(shell pwd)
 NP_DIR="$(WINES_DIR)/np_data"
+CSV_DIR="$(WINES_DIR)/csv_data"
 H5_DATA_PATH="$(WINES_DIR)/preseiz-13089010103_41368_2_sample9.h5"
 H5_MODEL_PATH="$(WINES_DIR)/pat_25302.pruneCNN12.h5"
 2D_MODEL_PATH="$(WINES_DIR)/model_2d"
@@ -16,7 +17,6 @@ QUANTIZED_PATH="$(WINES_DIR)/quantized_model.h5"
 ORIGINAL_RESULTS="${WINES_DIR}/h5_model_out.json"
 QUANTIZED_RESULTS="${WINES_DIR}/quantized_model_out.json"
 BOARD_IP="10.42.0.42"
-CNPY_BUILD="${WINES_DIR}/cnpy_build"
 
 
 # assumed to be the vitis-AI docker container. Also worth activating the conda env: (vitis-ai-tensorflow2)
@@ -41,6 +41,9 @@ is_not_docker:
 # do cleanup
 clean:
 	cd ${WINES_DIR} && bash cleanup.sh
+
+npy_to_csv:
+	cd ${WINES_DIR} && python3 np_to_csv.py --input_dir "${NP_DIR}" --output_dir "${CSV_DIR}" --replace_existing
 
 # Test h5 has a side effect of creating the input data.
 # that needs to be cleaned up, but for now, it is a dependency

@@ -4,6 +4,7 @@ from tensorflow.keras import Model
 import argparse
 import numpy as np
 import os
+import json
 
 
 def make_new_model(old_model):
@@ -108,16 +109,23 @@ def main():
     args = parser.parse_args()
     old_model = tf.keras.models.load_model(args.model_1d)
     old_model.summary()
-
+    model_config = old_model.get_config()
+    # config_dict = json.loads(model_config)
+    layers_config = model_config["layers"]
+    print(layers_config)
+    # save the model config to a file:
+    with open('model_config.json', 'w') as f:
+        json.dump(model_config, f)
+    # print(model_config)
     # Add the conv2d model before all other existing layers
     # Then squeeze one dimension from the output of the conv2d layer
     # This is to make the model compatible with the MO tool and generate_vnnx tool
 
-    model = make_new_model(old_model)
+    # model = make_new_model(old_model)
     # model.make()
-    model.summary()
+    # model.summary()
 
-    model.save(args.out_model_2d)
+    # model.save(args.out_model_2d)
 
 
 if __name__ == '__main__':
