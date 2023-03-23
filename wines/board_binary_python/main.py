@@ -41,31 +41,16 @@ def get_input_data(input_dir):
 #     v = runner.execute_async(input_tensor_buffers, output_tensor_buffers)
 #     runner.wait(v)
 #     output_data = np.asarray(output_tensor_buffers[0])
-
-def app(input_dir, output_dir, model_path):
-    # create graph runner
-    input_data = get_input_data(input_dir)
-    num_chunks = len(input_data)
+def run_subgraph(subgraph_runner, input_data):
+    input_tensor_buffers = subgraph_runner.get_input_tensors()
+    output_tensor_buffers = subgraph_runner.get_output_tensors()
     output_list = []
-
-    xmodel_file = model_path
-    graph = xir.Graph.deserialize(xmodel_file)
-    print(graph)
-    subgraphs = graph.get_root_subgraph().toposort_child_subgraph()
-    for sub in subgraphs:
-        print(f'\n\n\n{sub}')
-    runner = vart.Runner.create_runner(subgraphs[1], "run")
-    # populate input/output tensors
-    # process fpgaOutput
-    # get input and output tensor buffers
-    input_tensor_buffers = runner.get_input_tensors()
-    output_tensor_buffers = runner.get_output_tensors()
     output_data = []
     for output_tensor_buffer in output_tensor_buffers:
         print(output_tensor_buffer)
         output_data.append(np.zeros(output_tensor_buffer.dims, dtype='float32'))
     # run graph runner
-    for i in range(num_chunks):
+    for i in range(len(input_data)):
         # put the first input chunk into the input tensor buffer
         print(input_tensor_buffers)
         # input tensor buffer is 1 x 1 x 1024 x 1
@@ -73,12 +58,47 @@ def app(input_dir, output_dir, model_path):
         for inputTensor in input_tensor_buffers:
             inputData.append(input_data[i].reshape(inputTensor.dims))
 
-        jid = runner.execute_async(inputData, output_data)
-        runner.wait(jid)
+        jid = subgraph_runner.execute_async(inputData, output_data)
+        subgraph_runner.wait(jid)
         # output_tensor_buffers = runner.get_outputs()
         # output_data = np.asarray(output_tensor_buffers[0])
         output_list.append(output_data)
-        print(f'output_data: {output_data}\n\n\n')
+        # print(f'output_data: {output_data}\n\n\n')
+    return output_list
+
+def app(input_dir, output_dir, model_path):
+    # create graph runner
+    input_data = get_input_data(input_dir)
+    output_list = []
+
+    xmodel_file = model_path
+    graph = xir.Graph.deserialize(xmodel_file)
+    print(graph)
+    subgraphs = graph.get_root_subgraph().toposort_child_subgraph()
+    print(len(subgraphs))
+    for sub in subgraphs:
+        print(f'\n\n\n{sub}')
+    runner1 = vart.Runner.create_runner(subgraphs[1], "run")
+    print('Running subgraph 2')
+    runner2 = vart.Runner.create_runner(subgraphs[2], "run")
+    print('Running subgraph 3')
+    runner3 = vart.Runner.create_runner(subgraphs[3], "run")
+    print('Running subgraph 4')
+    runner4 = vart.Runner.create_runner(subgraphs[4], "run")
+    print('Running subgraph 5')
+    runner5 = vart.Runner.create_runner(subgraphs[5], "run")
+    print('Running subgraph 6')
+    runner6 = vart.Runner.create_runner(subgraphs[6], "run")
+    # populate input/output tensors
+    # process fpgaOutput
+    # get input and output tensor buffers
+    output1 = run_subgraph(runner1, input_data)
+    output2 = run_subgraph(runner2, output1)
+    output3 = run_subgraph(runner3, output2)
+    output4 = run_subgraph(runner4, output3)
+    output5 = run_subgraph(runner5, output4)
+    output6 = run_subgraph(runner6, output5)
+
     # save the output to a file
     output_file = os.path.join(output_dir, "output.npy")
     np.save(output_file, output_list)
