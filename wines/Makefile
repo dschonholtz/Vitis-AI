@@ -20,6 +20,8 @@ BOARD_IP="10.42.0.42"
 
 
 # assumed to be the vitis-AI docker container. Also worth activating the conda env: (vitis-ai-tensorflow2)
+# do this with ./docker_run.sh xilinx/vitis-ai-tensorflow2-cpu:latest
+# conda activate vitis-ai-tensorflow2
 is_docker:
 	@echo "Checking if running in docker container"
 	@if [ -f /.dockerenv ]; then \
@@ -98,19 +100,6 @@ test_xmodel: is_docker
 		xdputil run ./compile_model/resnet_v1_50_tf.xmodel            \
 		./dump_gpu/dump_results_0/input_aquant.bin                    \
 		2>result.log 1>&2
-
-# TODO - Copy over the C++/python binaries to run the xmodel as well as the xmodel itself.
-copy_model_to_board: is_not_docker
-	scp compile_model/seiznet_tf2.xmodel root@["${BOARD_IP}"]:~/
-
-cnpy:
-	mkdir -p ${CNPY_BUILD}
-	cd ${WINES_DIR} && \
-		git clone https://github.com/rogersce/cnpy.git || true
-	cd ${CNPY_BUILD} && \
-		cmake ${WINES_DIR}/cnpy && \
-		make && \
-		cp libcnpy.so ${CNPY_BUILD}
 
 
 default:

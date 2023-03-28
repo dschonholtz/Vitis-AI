@@ -101,6 +101,7 @@ def make_new_model(old_model):
 
     return model
 
+
 def main():
     parser = argparse.ArgumentParser()
     # default file is the current directory and the pat_25302.pruneCNN12.h5 file
@@ -121,11 +122,11 @@ def main():
     # Then squeeze one dimension from the output of the conv2d layer
     # This is to make the model compatible with the MO tool and generate_vnnx tool
 
-    # model = make_new_model(old_model)
+    model = make_new_model(old_model)
     # model.make()
-    # model.summary()
+    model.summary()
 
-    # model.save(args.out_model_2d)
+    model.save(args.out_model_2d)
 
 
 if __name__ == '__main__':

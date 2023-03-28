@@ -57,10 +57,10 @@ def quantize_model(model_path, quantized_model_path, numpy_dir):
     quantizer.get_deploy_model(quantized_model).save(quantized_model_path)
     # quantized_model.save(quantized_model_path)
 
-    model = keras.models.load_model(quantized_model_path)
-    quantizer.VitisQuantizer.dump_model(model=quantized_model, 
-                                         dataset=calib_dataset,
-                                         output_dir='./quantized_dump')
+    # model = keras.models.load_model(quantized_model_path)
+    # quantizer.VitisQuantizer.dump_model(model=quantized_model,
+    #                                      dataset=calib_dataset,
+    #                                      output_dir='./quantized_dump')
 
     # path to test dataset
     # eval_dataset = os.path.join(local_dir_path, 'np_data')

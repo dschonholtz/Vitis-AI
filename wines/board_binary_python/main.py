@@ -12,22 +12,10 @@ import xir
 # import time
 # import sys
 import argparse
+from utils import get_input_data
 
 
 divider = '---------------------------'
-
-
-def get_input_data(input_dir):
-    """
-    Takes a dir of csvs, pulls out all of the csv files and puts them into a 2d numpy array.
-    """
-    input_data = []
-    for file in os.listdir(input_dir):
-        if file.endswith(".csv"):
-            input_file = os.path.join(input_dir, file)
-            input_chunk = np.loadtxt(input_file, delimiter=',', dtype='float32')
-            input_data.append(input_chunk)
-    return input_data
 
 
 # def example():
@@ -47,16 +35,17 @@ def run_subgraph(subgraph_runner, input_data):
     output_list = []
     output_data = []
     for output_tensor_buffer in output_tensor_buffers:
-        print(output_tensor_buffer)
+        # print(output_tensor_buffer)
         output_data.append(np.zeros(output_tensor_buffer.dims, dtype='float32'))
     # run graph runner
     for i in range(len(input_data)):
         # put the first input chunk into the input tensor buffer
-        print(input_tensor_buffers)
+        # print(input_tensor_buffers)
         # input tensor buffer is 1 x 1 x 1024 x 1
         inputData = []
+        # print(f'input_data: {input_data}')
         for inputTensor in input_tensor_buffers:
-            inputData.append(input_data[i].reshape(inputTensor.dims))
+            inputData.append(np.array(input_data[i]).reshape(inputTensor.dims))
 
         jid = subgraph_runner.execute_async(inputData, output_data)
         subgraph_runner.wait(jid)
@@ -65,6 +54,7 @@ def run_subgraph(subgraph_runner, input_data):
         output_list.append(output_data)
         # print(f'output_data: {output_data}\n\n\n')
     return output_list
+
 
 def app(input_dir, output_dir, model_path):
     # create graph runner
@@ -78,26 +68,34 @@ def app(input_dir, output_dir, model_path):
     print(len(subgraphs))
     for sub in subgraphs:
         print(f'\n\n\n{sub}')
-    runner1 = vart.Runner.create_runner(subgraphs[1], "run")
-    print('Running subgraph 2')
-    runner2 = vart.Runner.create_runner(subgraphs[2], "run")
-    print('Running subgraph 3')
-    runner3 = vart.Runner.create_runner(subgraphs[3], "run")
-    print('Running subgraph 4')
-    runner4 = vart.Runner.create_runner(subgraphs[4], "run")
-    print('Running subgraph 5')
-    runner5 = vart.Runner.create_runner(subgraphs[5], "run")
-    print('Running subgraph 6')
-    runner6 = vart.Runner.create_runner(subgraphs[6], "run")
+    print(f'Creating Runner 0 {subgraphs[0].get_name()}')
+    # input layer, we can skip it. It is an identity layer
+    # runner0 = vart.Runner.create_runner(subgraphs[0], "run")
+    print(f'Creating Runner 1 {subgraphs[1].get_name()}')
+    # dpu
+    dpu_runner1 = vart.Runner.create_runner(subgraphs[1], "run")
+    print(f'Creating Runner 2 {subgraphs[2].get_name()}')
+    cpu_runner2 = vart.Runner.create_runner(subgraphs[2], "ref")
+    print('Creating Runner 3' + subgraphs[3].get_name())
+    dpu_runner3 = vart.Runner.create_runner(subgraphs[3], "run")
+    print('Creating Runner 4' + subgraphs[4].get_name())
+    cpu_runner4 = vart.Runner.create_runner(subgraphs[4], "ref")
+    print('Creating Runner 5' + subgraphs[5].get_name())
+    dpu_runner5 = vart.Runner.create_runner(subgraphs[5], "run")
+    print('Creating Runner 6' + subgraphs[6].get_name())
+    cpu_runner6 = vart.Runner.create_runner(subgraphs[6], "ref")
     # populate input/output tensors
     # process fpgaOutput
     # get input and output tensor buffers
-    output1 = run_subgraph(runner1, input_data)
-    output2 = run_subgraph(runner2, output1)
-    output3 = run_subgraph(runner3, output2)
-    output4 = run_subgraph(runner4, output3)
-    output5 = run_subgraph(runner5, output4)
-    output6 = run_subgraph(runner6, output5)
+    # output = run_subgraph(runner0, input_data)
+    output = run_subgraph(dpu_runner1, input_data)
+    output = run_subgraph(cpu_runner2, output)
+    output = run_subgraph(dpu_runner3, output)
+    output = run_subgraph(cpu_runner4, output)
+    output = run_subgraph(dpu_runner5, output)
+    output = run_subgraph(cpu_runner6, output)
+
+    print(f'output6: {output}\n\n\n')
 
     # save the output to a file
     output_file = os.path.join(output_dir, "output.npy")
